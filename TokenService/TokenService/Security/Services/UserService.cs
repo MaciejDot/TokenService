@@ -32,9 +32,9 @@ namespace TokenService.Security.Services
             _random = random;
         }
 
-        public byte[] GetRSAPublicKey()
+        public RSAParameters GetRSAPublicKey()
         {
-            return RSAKey.ExportRSAPublicKey();
+            return RSAKey.ExportParameters(false);
         }
 
         public string RandomString(int size)

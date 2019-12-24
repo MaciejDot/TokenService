@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using TokenService.Models;
 using TokenService.Security.Services;
 
 namespace TokenService.Controllers
@@ -21,9 +23,13 @@ namespace TokenService.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public ActionResult<byte[]> Get()
+        public ActionResult<RSAParametersDTO> Get()
         {
-            return _userService.GetRSAPublicKey();
+            var param = _userService.GetRSAPublicKey();
+            return new RSAParametersDTO { 
+                Modulus = param.Modulus,
+                Exponent = param.Exponent
+            };
         }
     }
 }
