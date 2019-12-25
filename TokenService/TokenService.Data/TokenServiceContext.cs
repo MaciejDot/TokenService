@@ -7,8 +7,6 @@ namespace TokenService.Data
 {
     public class TokenServiceContext : DbContext
     {
-
-        public TokenServiceContext() { }
         public TokenServiceContext(DbContextOptions<TokenServiceContext> options)
             : base(options)
         {
@@ -17,10 +15,6 @@ namespace TokenService.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<User> Users { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder options){
-            options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=TokenService;Trusted_Connection=True;");
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -15,6 +15,7 @@ namespace TokenService.Controllers
     [EnableCors]
     [Route("Token")]
     [ApiController]
+    [AllowAnonymous]
     public class TokenController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -24,8 +25,8 @@ namespace TokenService.Controllers
             _userService= userService;
         }
 
-        [Authorize]
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<TokenDTO>> Get(CancellationToken token)
         {
             var id = User.Claims.Single(x => x.Type == "Id").Value;
