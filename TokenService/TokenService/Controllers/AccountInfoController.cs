@@ -14,13 +14,14 @@ namespace TokenService.Controllers
     [EnableCors]
     [Route("AccountInfo")]
     [ApiController]
-    [Authorize]
+    [AllowAnonymous]
     public class AccountInfoController : ControllerBase
     {
         [HttpGet]
+        [Authorize]
         public ActionResult<UserInfoDTO> Get()
         {
-            return new UserInfoDTO{ UserName = User.Claims.Single(x=>x.Type=="Name").Value };
+            return new UserInfoDTO{ Username = User.Claims.Single(x=>x.Type=="Name").Value };
         }
     }
 }

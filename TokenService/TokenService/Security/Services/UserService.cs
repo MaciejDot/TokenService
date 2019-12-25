@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TokenService.Configuration;
 using TokenService.Data;
 using TokenService.Data.Entities;
 using TokenService.Security.Models;
@@ -23,28 +24,40 @@ namespace TokenService.Security.Services
     {
         private readonly Random _random;
         private readonly TokenServiceContext _context;
-        public static RSA RSAKey { get; set; }
+        private readonly RSA _rsaKey;
 
         public UserService( Random random,
-            TokenServiceContext context)
+            TokenServiceContext context,
+            IOptions<PrivateRSAOptions> optionsRSA)
         {
             _context = context;
             _random = random;
+            var options = optionsRSA.Value;
+            _rsaKey = RSA.Create(new RSAParameters
+            {
+                Modulus = Convert.FromBase64String(options.Modulus),
+                Exponent = Convert.FromBase64String(options.Exponent),
+                DP = Convert.FromBase64String(options.DP),
+                DQ = Convert.FromBase64String(options.DQ),
+                D = Convert.FromBase64String(options.D),
+                Q = Convert.FromBase64String(options.Q),
+                InverseQ = Convert.FromBase64String(options.InverseQ),
+                P = Convert.FromBase64String(options.P)
+            });
         }
 
         public RSAParameters GetRSAPublicKey()
         {
-            return RSAKey.ExportParameters(false);
+            return _rsaKey.ExportParameters(false);
         }
 
         public string RandomString(int size)
         {
             StringBuilder builder = new StringBuilder();
-            char ch;
+            string characters = "qwertyuiopasdfghjklzxcvbn1234567890QWERTYUIOPASDFGHJKLZXCVBNM";
             for (int i = 0; i < size; i++)
             {
-                ch = Convert.ToChar(26 * _random.Next(26) + 65);
-                builder.Append(ch);
+                builder.Append(characters[_random.Next(characters.Length)]);
             }
             return builder.ToString();
         }
@@ -79,7 +92,7 @@ namespace TokenService.Security.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.RsaSsaPssSha256)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(_rsaKey), SecurityAlgorithms.RsaSsaPssSha256)
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -109,7 +122,7 @@ namespace TokenService.Security.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(RSAKey), SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(_rsaKey), SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
@@ -118,8 +131,8 @@ namespace TokenService.Security.Services
         private string GetHash(string stamp, string password)
         {
             var sha256 = SHA256.Create();
-            var stampBytes = Encoding.ASCII.GetBytes(stamp);
-            var passwordBytes = Encoding.ASCII.GetBytes(password);
+            var stampBytes = Encoding.UTF8.GetBytes(stamp);
+            var passwordBytes = Encoding.UTF8.GetBytes(password);
             var finalHash = passwordBytes;
             for(int i = 0; i < 10000; i++)
             {

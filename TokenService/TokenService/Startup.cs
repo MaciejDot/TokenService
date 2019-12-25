@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using TokenService.Configuration;
 using TokenService.Data;
 using TokenService.Security.Services;
 
@@ -43,8 +44,13 @@ namespace TokenService
             services.AddScoped<IUserService, UserService>();
             services.AddHealthChecks();
             services.AddScoped<Random>();
-            var rsa = RSA.Create(16384);
-            UserService.RSAKey = rsa;
+            services.AddOptions<PrivateRSAOptions>().Configure((options) => Configuration.Bind(options));
+            var options = Configuration.Get<PrivateRSAOptions>();
+            var rsa = RSA.Create(new RSAParameters {
+                Modulus = Convert.FromBase64String(options.Modulus),
+                Exponent = Convert.FromBase64String(options.Exponent)
+            });
+            
             services
                 .AddAuthentication(x =>
                 {
@@ -81,7 +87,11 @@ namespace TokenService
 
             app.UseAuthorization();
 
+            app.UseAuthentication();
+
             app.UseHealthChecks("/Health");
+
+            app.UseCors();
 
             app.UseEndpoints(endpoints =>
             {
