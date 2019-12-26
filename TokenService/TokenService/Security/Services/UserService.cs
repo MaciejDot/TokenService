@@ -92,7 +92,7 @@ namespace TokenService.Security.Services
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.Now.AddMinutes(5),
-                SigningCredentials = new SigningCredentials(new RsaSecurityKey(_rsaKey), SecurityAlgorithms.RsaSsaPssSha256)
+                SigningCredentials = new SigningCredentials(new RsaSecurityKey(_rsaKey), SecurityAlgorithms.RsaSha256Signature, SecurityAlgorithms.Sha256Digest)
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);

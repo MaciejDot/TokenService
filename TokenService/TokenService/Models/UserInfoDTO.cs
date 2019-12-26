@@ -8,5 +8,6 @@ namespace TokenService.Models
     public class UserInfoDTO
     {
         public string Username { get; set; }
+        public IEnumerable<string> Roles { get; set; }
     }
 }
