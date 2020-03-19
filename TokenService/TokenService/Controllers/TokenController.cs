@@ -38,16 +38,15 @@ namespace TokenService.Controllers
         [HttpPost]
         public async Task<ActionResult<TokenDTO>> Post([FromBody]AuthenticationModel userModel, CancellationToken cancellationToken)
         {
-            var token = string.Empty;
             try 
             {
-                token = (await _userService.Authenticate(userModel, cancellationToken));
+                var token = (await _userService.Authenticate(userModel, cancellationToken));
+                return new TokenDTO { Token = token };
             }
             catch
             {
                 return Unauthorized();
             }
-            return new TokenDTO { Token = token };
         }
     }
 }

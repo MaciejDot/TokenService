@@ -26,7 +26,7 @@ namespace TokenService.Security.Services
         private readonly TokenServiceContext _context;
         private readonly RSA _rsaKey;
 
-        public UserService( Random random,
+        public UserService(Random random,
             TokenServiceContext context,
             IOptions<PrivateRSAOptions> optionsRSA)
         {
@@ -64,12 +64,12 @@ namespace TokenService.Security.Services
 
         public async Task<bool> AddUser(RegisterUser user, CancellationToken cancellationToken)
         {
-            if (await _context.Users.AnyAsync(x=>x.Email == user.Email|| x.Username == user.Username , cancellationToken))
+            if (await _context.Users.AnyAsync(x => x.Email == user.Email || x.Username == user.Username, cancellationToken))
             {
                 return false;
             }
             var stamp = RandomString(100);
-            var passwordHash = GetHash(stamp, user.Password);
+            var passwordHash = await GetHash(stamp, user.Password);
             var id = RandomString(100);
             await _context.Users.AddAsync(new User { Id = id, Email = user.Email, Username = user.Username, SecurityStamp = stamp, PasswordHash = passwordHash }, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
@@ -78,7 +78,7 @@ namespace TokenService.Security.Services
 
         public async Task<string> GetTokenForUser(string id, CancellationToken cancellationToken)
         {
-            var userData = await _context.Users.Select(x=> new {User = x, Roles = x.UserRoles.Select(x => x.Role.Name).ToList() }).SingleAsync(x => x.User.Id == id, cancellationToken);
+            var userData = await _context.Users.Select(x => new { User = x, Roles = x.UserRoles.Select(x => x.Role.Name).ToList() }).SingleAsync(x => x.User.Id == id, cancellationToken);
             var user = userData.User;
             var roles = userData.Roles;
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -103,10 +103,10 @@ namespace TokenService.Security.Services
         public async Task<string> Authenticate(AuthenticationModel authenticationModel, CancellationToken cancellationToken)
         {
             var userData = await _context.Users
-                .Select(x => new { User = x , Roles = x.UserRoles.Select(x => x.Role.Name).ToList()})
-                .SingleAsync( x=>x.User.Email == authenticationModel.Email, cancellationToken);
+                .Select(x => new { User = x, Roles = x.UserRoles.Select(x => x.Role.Name).ToList() })
+                .SingleAsync(x => x.User.Email == authenticationModel.Email, cancellationToken);
             var user = userData.User;
-            if (GetHash(user.SecurityStamp, authenticationModel.Password) != user.PasswordHash)
+            if (await GetHash(user.SecurityStamp, authenticationModel.Password) != user.PasswordHash)
             {
                 throw new Exception("not valid model");
             }
@@ -128,17 +128,26 @@ namespace TokenService.Security.Services
 
             return tokenHandler.WriteToken(token);
         }
-        private string GetHash(string stamp, string password)
+        public Task<List<UserDTO>> GetUsers(CancellationToken token)
+        {
+            return _context.Users
+                .Select(x => new UserDTO
+                {
+                    Id = x.Id,
+                    Username = x.Username
+                }).ToListAsync(token);
+        }
+        private static Task<string> GetHash(string stamp, string password)
         {
             var sha256 = SHA256.Create();
             var stampBytes = Encoding.UTF8.GetBytes(stamp);
             var passwordBytes = Encoding.UTF8.GetBytes(password);
             var finalHash = passwordBytes;
-            for(int i = 0; i < 10000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 finalHash = sha256.ComputeHash(finalHash.Union(stampBytes).ToArray());
             }
-            return Convert.ToBase64String(finalHash);
+            return Task.FromResult(Convert.ToBase64String(finalHash));
         }
 
     }

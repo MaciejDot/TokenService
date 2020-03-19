@@ -50,7 +50,7 @@ namespace TokenService
                 Modulus = Convert.FromBase64String(options.Modulus),
                 Exponent = Convert.FromBase64String(options.Exponent)
             });
-            
+
             services
                 .AddAuthentication(x =>
                 {
